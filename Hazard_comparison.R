@@ -527,7 +527,7 @@ tseq[c(3421, 3431)]
 # ratio is - this is the non-collapsibility of the Cox hazard
 # ratio. This contrasts with the additive hazards and AFT models,
 # where the corresponding population-averaged effect measures
-# stay constant.
+# stay constant and unchanged.
 
 # Frailty variable U takes values -1, 0, 1 with probabilities
 # pmin1, p0, p1
@@ -595,9 +595,6 @@ Savminus_ah <- function(t) Sav_ah(t) * exp(bet_ah * t)
 Hav_ah <- function(t) -log(Sav_ah(t))
 Havplus_ah <- function(t) Hav_ah(t) + bet_ah * t
 Havminus_ah <- function(t) Hav_ah(t) - bet_ah * t
-# hav_af <- sapply(tseq, function(t) numDeriv::grad(Hav_ah, t))
-# plot(tseq, h0(tseq), type = "l")
-# lines(tseq, hav_af, type = "l", col = 2)
 hav_ah <- function(t) {
   den <- pmin1 * exp(gam_ah * t) + p0 + p1 * exp(-gam_ah * t)
   num <- pmin1 * gam_ah * exp(gam_ah * t) -
@@ -606,8 +603,6 @@ hav_ah <- function(t) {
 }
 havplus_ah <- function(t) hav_ah(t) + bet_ah
 havminus_ah <- function(t) hav_ah(t) - bet_ah
-# plot(tseq, h0(tseq), type = "l")
-# lines(tseq, hav_af(tseq), type = "l", col = 2)
 
 # AFT model
 Sp_AFT <- function(t) S0(t * exp(-gam_AFT))
@@ -641,8 +636,6 @@ havplus_AFT <- sapply(
 havminus_AFT <- sapply(
   tseq, function(t) numDeriv::grad(Havminus_AFT, t)
 )
-# plot(tseq, h0(tseq), type = "l")
-# lines(tseq, hav_AFT, type = "l", col = 2)
 
 # Prepare data for averaged survival curves
 surv_av_data <- tibble(t = tseq) |>

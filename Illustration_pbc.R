@@ -7,7 +7,7 @@
 #'   pdf_document:
 #'     toc: true
 #'   latex_engine: xelatex
-#' fontsize: 12pt
+#' fontsize: 1pt
 #' ---
 #' 
 #' # Preliminaries
@@ -65,7 +65,7 @@ pbc$stat <- pbc$status
 pbc$stat[pbc$stat == 2] <- 1 # so we use transplant-free survival
 table(pbc$stat)
 table(pbc$edema)
-#' We are also going to overwrite edema with a binary version
+#' We are also going to overwrite `edema` with a binary version
 #' where the value 0.5 is set to 1 (so 0.5 and 1 are combined
 #' into one group). (Again, the original data will remain
 #' available in the survival package.)
@@ -270,7 +270,7 @@ p_scox
 
 #' # Additive hazards models
 #' 
-#' We continue to fit additive hazards models. The non-parametric
+#' We continue by fitting additive hazards models. The non-parametric
 #' OLS has been implemented for instance in the survival package,
 #' function aareg(), and in the timereg package, using aalen().
 #' We will first illustrate aareg() from survival.
@@ -418,7 +418,7 @@ p_ah3 <- plot_he_survival(
 p_ah3
 # dev.off()
 
-#' Note that all mode-based survival curves are monotone, but
+#' Note that all model-based survival curves are monotone, but
 #' especially the hepato no, edema yes curve is quite different
 #' from the previous additive hazard curves.
 
@@ -476,10 +476,6 @@ fitl <- flexsurvreg(
   Surv(yrs, stat) ~ hepato + edema, data = pbc,
   dist = "llogis"
 )
-# Named fitgg (not fitg) to avoid colliding with the Gompertz fit
-# below - the original script assigned both to fitg, so the
-# gengamma fit was being silently overwritten by the Gompertz
-# one.
 fitgg <- flexsurvreg(
   Surv(yrs, stat) ~ hepato + edema, data = pbc,
   dist = "gengamma"
@@ -503,6 +499,55 @@ fitn
 fitf
 fitg
 
+# Try out plot function of flexsurvreg
+nd <- data.frame(hepato = c(0, 0, 1, 1), edema = c(0, 1, 0, 1))
+# nd's row order (00, 01, 10, 11) matches he_levels, so the four
+# summary() curves below can be combined directly via
+# combine_he().
+flexsurv_he_df <- function(fit, t = tseq) {
+  s <- summary(fit, newdata = nd, t = t, ci = FALSE)
+  combine_he(
+    data.frame(time = s[[1]]$time, surv = s[[1]]$est),
+    data.frame(time = s[[2]]$time, surv = s[[2]]$est),
+    data.frame(time = s[[3]]$time, surv = s[[3]]$est),
+    data.frame(time = s[[4]]$time, surv = s[[4]]$est)
+  )
+}
+# (Set ci = TRUE in flexsurv_he_df()/summary() above, and add a
+# ribbon geom in plot_he_survival(), to restore confidence
+# bands.)
+
+plot_he_survival(
+  flexsurv_he_df(fitw), "Weibull AFT", type = "line"
+)
+
+plot_he_survival(
+  flexsurv_he_df(fitl), "Log-logistic", type = "line"
+)
+
+plot_he_survival(
+  flexsurv_he_df(fitgg), "Generalized gamma", type = "line"
+)
+
+plot_he_survival(
+  flexsurv_he_df(fitn), "Log-normal", type = "line"
+)
+
+plot_he_survival(
+  flexsurv_he_df(fitf), "Generalized F", type = "line"
+)
+
+plot_he_survival(
+  flexsurv_he_df(fitg), "Gompertz", type = "line"
+)
+
+#' Different parametric error distributions clearly lead
+#' to quite different AFT model-based survival curves
+#' (Weibull and Gompertz being similar to each other, but
+#' different from the log-normal, log-logistic and the more
+#' flexible other distributions).
+#'
+#'
 #' Package eha has the function aftreg() that fits parametric AFT
 #' models. Default is the Weibull distributions, but also
 #' loglogistic, lognormal and Gompertz distributions are
@@ -658,58 +703,17 @@ p_bj <- plot_he_survival(
 p_bj
 # dev.off()
 
-# Try out plot function of flexsurvreg
-nd <- data.frame(hepato = c(0, 0, 1, 1), edema = c(0, 1, 0, 1))
-# nd's row order (00, 01, 10, 11) matches he_levels, so the four
-# summary() curves below can be combined directly via
-# combine_he().
-flexsurv_he_df <- function(fit, t = tseq) {
-  s <- summary(fit, newdata = nd, t = t, ci = FALSE)
-  combine_he(
-    data.frame(time = s[[1]]$time, surv = s[[1]]$est),
-    data.frame(time = s[[2]]$time, surv = s[[2]]$est),
-    data.frame(time = s[[3]]$time, surv = s[[3]]$est),
-    data.frame(time = s[[4]]$time, surv = s[[4]]$est)
-  )
-}
-# (Set ci = TRUE in flexsurv_he_df()/summary() above, and add a
-# ribbon geom in plot_he_survival(), to restore confidence
-# bands.)
-
-plot_he_survival(
-  flexsurv_he_df(fitw), "Weibull AFT", type = "line"
-)
-
-plot_he_survival(
-  flexsurv_he_df(fitl), "Log-logistic", type = "line"
-)
-
-plot_he_survival(
-  flexsurv_he_df(fitgg), "Generalized gamma", type = "line"
-)
-
-plot_he_survival(
-  flexsurv_he_df(fitn), "Log-normal", type = "line"
-)
-
-plot_he_survival(
-  flexsurv_he_df(fitf), "Generalized F", type = "line"
-)
-
-plot_he_survival(
-  flexsurv_he_df(fitg), "Gompertz", type = "line"
-)
-
 #' # Combined figure
 #'
-#' For ease of reference in the text, we also combine six of the
+#' For inclusion in the paper itself, we also combine six of the
 #' survival curve plots above - Cox, stratified Cox, the two
 #' additive hazards (OLS) variants, additive hazards (MLE), and
 #' semi-parametric AFT - into a single 3x2 figure, panel-
 #' labelled (a)-(f) for later reference. The "Hepato / edema"
 #' legend (which is identical across all six panels) is
 #' collected into a single shared legend rather than repeated
-#' six times.
+#' six times. the figure does not look nice in the pdf obtained
+#' by rendering the R file, but the saved pdf is better.
 
 # Prepares one panel for the combined figure: imposes the same
 # x-axis breaks/range on every panel (some of the six plots
